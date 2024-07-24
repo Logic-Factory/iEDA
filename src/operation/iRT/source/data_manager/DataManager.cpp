@@ -861,6 +861,10 @@ void DataManager::wrapPinList(Net& net, idb::IdbNet* idb_net)
     if (idb_pin->get_term()->get_port_number() <= 0) {
       continue;
     }
+    if (idb_pin->get_port_box_list().empty()) {
+      std::cerr << "empyt port shape of idb_pin\n";
+      continue;
+    }
     Pin pin;
     pin.set_pin_name(RTUTIL.getString(idb_pin->get_instance()->get_name(), ":", idb_pin->get_pin_name()));
     wrapPinShapeList(pin, idb_pin);
@@ -868,6 +872,10 @@ void DataManager::wrapPinList(Net& net, idb::IdbNet* idb_net)
   }
   for (auto* io_pin : idb_net->get_io_pins()->get_pin_list()) {
     if (io_pin->get_term()->get_port_number() <= 0) {
+      continue;
+    }
+    if (io_pin->get_port_box_list().empty()) {
+      std::cerr << "empyt port shape of io_pin\n";
       continue;
     }
     Pin pin;
