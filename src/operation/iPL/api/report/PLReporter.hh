@@ -27,7 +27,7 @@ class PLReporter
   void reportTimingInfo(std::ofstream& feed);
   void reportCongestionInfo(std::ofstream& feed);
   void reportPLBaseInfo(std::ofstream& feed);
-  
+
   void printHPWLInfo();
   void printTimingInfo();
   void saveNetPinInfoForDebug(std::string path);
@@ -40,8 +40,24 @@ class PLReporter
   void reportEDAEvaluation();
   void reportEDAFillerEvaluation();
   void reportTDPEvaluation();
- 
+
   ExternalAPI* _external_api;
+
+  void updateWL();
+  int64_t getTotalHPWL() const { return total_hpwl_; }
+  int64_t getMaxHPWL() const { return max_hpwl_; }
+  int64_t getConstraintHPWL() const { return constraint_hpwl_; }
+  int64_t getTotalSTWL() const { return total_stwl_; }
+  int64_t getMaxSTWL() const { return max_stwl_; }
+  int64_t getLongNetCnt() const { return long_net_cnt_; }
+
+ private:
+  int64_t total_hpwl_{0};
+  int64_t max_hpwl_{0};
+  int64_t constraint_hpwl_{0};
+  int64_t total_stwl_{0};
+  int64_t max_stwl_{0};
+  int64_t long_net_cnt_{0};
 };
 
 }  // namespace ipl

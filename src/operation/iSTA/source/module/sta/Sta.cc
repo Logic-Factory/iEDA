@@ -2418,22 +2418,16 @@ unsigned Sta::reportTiming(std::set<std::string> &&exclude_cell_names /*= {}*/,
   }
   std::filesystem::create_directories(design_work_space);
 
-  // std::string specify_path_file_name =
-  //     Str::printf("%s/%s.spec", design_work_space,
-  //     get_design_name().c_str());
-  // reportFromThroughTo(specify_path_file_name.c_str(), AnalysisMode::kMax,
-  //                     nullptr, nullptr,
-  //                     "u0_soc_top/u0_nic400_bus/u_cd_c0/u_ib_slave_5_ib_s/"
-  //                     "u_aw_slave_port_chan_slice/u_rev_regd_slice/_1021_:D");
-
   resetReportTbl();
 
-  auto copy_file = [this, &tmp, &copy_design_work_space](
+  std::string filename = "top";
+
+  auto copy_file = [this, &filename, &tmp, &copy_design_work_space](
                        const std::string &file_name,
                        const std::string &file_type) {
     std::string copy_file_name =
         Str::printf("%s/%s_%s%s", copy_design_work_space.c_str(),
-                    get_design_name().c_str(), tmp.c_str(), file_type.c_str());
+                    filename.c_str(), tmp.c_str(), file_type.c_str());
     if (std::filesystem::exists(file_name)) {
       std::filesystem::copy_file(
           file_name, copy_file_name,
@@ -2442,49 +2436,49 @@ unsigned Sta::reportTiming(std::set<std::string> &&exclude_cell_names /*= {}*/,
   };
 
   std::string rpt_file_name =
-      Str::printf("%s/%s.rpt", design_work_space, get_design_name().c_str());
+      Str::printf("%s/%s.rpt", design_work_space, filename.c_str());
   if (is_copy) {
     copy_file(rpt_file_name, ".rpt");
   }
   reportPath(rpt_file_name.c_str(), is_derate);
 
   std::string trans_rpt_file_name =
-      Str::printf("%s/%s.trans", design_work_space, get_design_name().c_str());
+      Str::printf("%s/%s.trans", design_work_space, filename.c_str());
   if (is_copy) {
     copy_file(trans_rpt_file_name, ".trans");
   }
   reportTrans(trans_rpt_file_name.c_str());
 
   std::string cap_rpt_file_name =
-      Str::printf("%s/%s.cap", design_work_space, get_design_name().c_str());
+      Str::printf("%s/%s.cap", design_work_space, filename.c_str());
   if (is_copy) {
     copy_file(cap_rpt_file_name, ".cap");
   }
   reportCap(cap_rpt_file_name.c_str(), is_clock_cap);
 
   std::string fanout_rpt_file_name =
-      Str::printf("%s/%s.fanout", design_work_space, get_design_name().c_str());
+      Str::printf("%s/%s.fanout", design_work_space, filename.c_str());
   if (is_copy) {
     copy_file(fanout_rpt_file_name, ".fanout");
   }
   reportFanout(fanout_rpt_file_name.c_str());
 
-  std::string setup_skew_rpt_file_name = Str::printf(
-      "%s/%s_setup.skew", design_work_space, get_design_name().c_str());
+  std::string setup_skew_rpt_file_name =
+      Str::printf("%s/%s_setup.skew", design_work_space, filename.c_str());
   if (is_copy) {
     copy_file(setup_skew_rpt_file_name, "_setup.skew");
   }
   reportSkew(setup_skew_rpt_file_name.c_str(), AnalysisMode::kMax);
 
-  std::string hold_skew_rpt_file_name = Str::printf(
-      "%s/%s_hold.skew", design_work_space, get_design_name().c_str());
+  std::string hold_skew_rpt_file_name =
+      Str::printf("%s/%s_hold.skew", design_work_space, filename.c_str());
   if (is_copy) {
     copy_file(hold_skew_rpt_file_name, "_hold.skew");
   }
   reportSkew(hold_skew_rpt_file_name.c_str(), AnalysisMode::kMin);
 
   std::string verilog_file_name =
-      Str::printf("%s/%s.v", design_work_space, get_design_name().c_str());
+      Str::printf("%s/%s.v", design_work_space, filename.c_str());
   if (is_copy) {
     copy_file(verilog_file_name, ".v");
   }

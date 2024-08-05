@@ -179,7 +179,6 @@ IdbLefService* IdbBuilder::buildLef(vector<string>& files, bool b_techfile)
   return _lef_service;
 }
 
-
 IdbDefService* IdbBuilder::rustBuildVerilog(string file, std::string top_module_name)
 {
   if (_def_service != nullptr) {
@@ -198,7 +197,11 @@ IdbDefService* IdbBuilder::rustBuildVerilog(string file, std::string top_module_
   }
 
   std::shared_ptr<RustVerilogRead> rust_verilog_read = std::make_shared<RustVerilogRead>(_def_service);
-  rust_verilog_read->createDb(file.c_str(), top_module_name);
+
+  if (top_module_name.empty())
+    rust_verilog_read->createDbAutoTop(file.c_str());
+  else
+    rust_verilog_read->createDb(file.c_str(), top_module_name);
 
   checkNetPins();
 
