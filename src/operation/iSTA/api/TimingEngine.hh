@@ -93,7 +93,7 @@ class TimingEngine {
   }
 
   TimingEngine &readDesign(const char *verilog_file) {
-    _ista->readVerilogWithRustParser(verilog_file);
+    _ista->readDesignWithRustParser(verilog_file);
     return *this;
   }
   TimingEngine &readSdc(const char *sdc_file) {
@@ -331,14 +331,21 @@ class TimingEngine {
   std::vector<std::string> getLibertyCellInputpin(const char *cell_name);
   StaClock *getPropClock(const char *clock_pin_name);
   StaSeqPathData *getWorstSeqData(StaVertex *vertex, AnalysisMode mode,
-                                          TransType trans_type) {
+                                  TransType trans_type) {
     return _ista->getWorstSeqData(vertex, mode, trans_type);
   }
 
-  StaSeqPathData *getWorstSeqData(AnalysisMode mode,
-                                          TransType trans_type) {
+  StaSeqPathData *getWorstSeqData(AnalysisMode mode, TransType trans_type) {
     return _ista->getWorstSeqData(std::nullopt, mode, trans_type);
   }
+
+  double getWorstArriveTime(AnalysisMode mode = AnalysisMode::kMax) {
+    double rise_AT = getWorstSeqData(mode, TransType::kRise)->getArriveTimeNs();
+    double fall_AT = getWorstSeqData(mode, TransType::kFall)->getArriveTimeNs();
+    double worst_AT = (rise_AT >= fall_AT ? rise_AT : fall_AT);
+    return worst_AT;
+  }
+
   std::priority_queue<StaSeqPathData *, std::vector<StaSeqPathData *>,
                       decltype(seq_data_cmp)>
   getViolatedSeqPathsBetweenTwoSinks(const char *pin1_name,
