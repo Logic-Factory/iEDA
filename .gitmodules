@@ -5,3 +5,4 @@
 [submodule "src/third_party/LSAssigner4iEDA"]
 	path = src/third_party/LSAssigner4iEDA
 	url = https://github.com/shaowei-cai-group/LSAssigner4iEDA
+	branch = main
