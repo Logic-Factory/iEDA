@@ -238,11 +238,21 @@ class TimingEngine {
     _ista->set_significant_digits(significant_digits);
     return *this;
   }
+
   TimingEngine &reportTiming(std::set<std::string> &&exclude_cell_names = {},
                              bool is_derate = false, bool is_clock_cap = false,
                              bool is_copy = true) {
     _ista->reportTiming(std::move(exclude_cell_names), is_derate, is_clock_cap,
                         is_copy);
+    return *this;
+  }
+
+  TimingEngine &reportTopkTiming(
+      int K, std::string save_path,
+      std::set<std::string> &&exclude_cell_names = {}, bool is_derate = false,
+      bool is_clock_cap = false, bool is_copy = true) {
+    _ista->reportTopkTiming(K, save_path, std::move(exclude_cell_names),
+                            is_derate, is_clock_cap, is_copy);
     return *this;
   }
 

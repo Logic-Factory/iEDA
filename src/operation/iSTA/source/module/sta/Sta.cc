@@ -1416,6 +1416,99 @@ unsigned Sta::reportPath(const char *rpt_file_name, bool is_derate /*=true*/) {
 }
 
 /**
+ * @brief Report TopK path in text file.
+ *
+ * @param rpt_file_name The report text file name.
+ * @param K TopK number.
+ * @return unsigned 1 if success, 0 else fail.
+ */
+unsigned Sta::reportTopkPath(const char *rpt_file_name, int K, bool is_derate) {
+  auto report_path =
+      [this](StaReportPathSummary &report_path_func) -> unsigned {
+    unsigned is_ok = 1;
+
+    auto path_group = get_path_group();  // specify path group.
+
+    for (auto &&[capture_clock, seq_path_group] : _clock_groups) {
+      if (!path_group ||
+          path_group.value() == capture_clock->get_clock_name()) {
+        is_ok = report_path_func(seq_path_group.get());
+        if (!is_ok) {
+          break;
+        }
+      }
+    }
+
+    if (_clock_gate_group) {
+      is_ok = report_path_func(_clock_gate_group.get());
+    }
+
+    return is_ok;
+  };
+
+  auto report_path_of_mode = [&report_path, this, rpt_file_name,
+                              is_derate](AnalysisMode mode) -> unsigned {
+    unsigned is_ok = 1;
+    if ((get_analysis_mode() == mode) ||
+        (get_analysis_mode() == AnalysisMode::kMaxMin)) {
+      unsigned n_worst = get_n_worst_path_per_clock();
+
+      StaReportPathSummary report_path_summary(rpt_file_name, mode, n_worst);
+      report_path_summary.set_significant_digits(get_significant_digits());
+
+      StaReportPathDetail report_path_detail(rpt_file_name, mode, n_worst,
+                                             is_derate);
+      report_path_detail.set_significant_digits(get_significant_digits());
+
+      StaReportClockTNS report_path_TNS(rpt_file_name, mode, 1);
+      report_path_TNS.set_significant_digits(get_significant_digits());
+
+      std::vector<StaReportPathSummary *> report_funcs{
+          &report_path_summary, &report_path_detail, &report_path_TNS};
+
+      // StaReportPathDump report_path_dump(rpt_file_name, mode, n_worst);
+      StaReportPathYaml report_path_dump(rpt_file_name, mode, n_worst);
+
+      if (c_print_delay_yaml) {
+        report_funcs.emplace_back(&report_path_dump);
+      }
+
+      for (auto *report_fun : report_funcs) {
+        is_ok = report_path(*report_fun);
+      }
+    }
+
+    return is_ok;
+  };
+
+  unsigned is_ok = report_path_of_mode(AnalysisMode::kMax);
+  is_ok &= report_path_of_mode(AnalysisMode::kMin);
+
+  if (!is_ok) {
+    return is_ok;
+  }
+
+  auto close_file = [](std::FILE *fp) { std::fclose(fp); };
+
+  std::unique_ptr<std::FILE, decltype(close_file)> f(
+      std::fopen(rpt_file_name, "w"), close_file);
+
+  std::fprintf(f.get(), "Generate the report at %s, GitVersion: %s.\n",
+               Time::getNowWallTime(), GIT_VERSION);
+  std::fprintf(f.get(), "%s", _report_tbl_summary->c_str());  // WNS
+  // report_TNS;
+  std::fprintf(f.get(), "%s", _report_tbl_TNS->c_str());
+
+  int count = K;
+  for (auto &report_tbl_detail : _report_tbl_details) {
+    if (count-- <= 0) break;
+    std::fprintf(f.get(), "%s", report_tbl_detail->c_str());
+  }
+
+  return 1;
+}
+
+/**
  * @brief report trans slack.
  *
  * @param rpt_file_name
@@ -2493,6 +2586,59 @@ unsigned Sta::reportTiming(std::set<std::string> &&exclude_cell_names /*= {}*/,
 
   writeVerilog(verilog_file_name.c_str(), exclude_cell_names);
 
+  LOG_INFO << "The timing engine run success.";
+
+  return 1;
+}
+
+/**
+ * @brief generate the timing report.
+ *
+ * @return unsigned
+ */
+unsigned Sta::reportTopkTiming(
+    int K, std::string save_path,
+    std::set<std::string> &&exclude_cell_names /*= {}*/,
+    bool is_derate /*=false*/, bool is_clock_cap /*=false*/,
+    bool is_copy /*=true*/) {
+  const char *design_work_space = get_design_work_space();
+  std::string now_time = Time::getNowWallTime();
+  std::string tmp = Str::replace(now_time, ":", "_");
+  std::string copy_design_work_space =
+      Str::printf("%s_%s", design_work_space, tmp.c_str());
+
+  LOG_INFO << "start write sta report topk.";
+  LOG_INFO << "output sta report path: " << design_work_space;
+
+  if (std::filesystem::exists(design_work_space) && is_copy) {
+    std::filesystem::create_directories(copy_design_work_space);
+  }
+  std::filesystem::create_directories(design_work_space);
+
+  resetReportTbl();
+
+  std::string filename = "top";
+
+  auto copy_file = [this, &filename, &tmp, &copy_design_work_space](
+                       const std::string &file_name,
+                       const std::string &file_type) {
+    std::string copy_file_name =
+        Str::printf("%s/%s_%s%s", copy_design_work_space.c_str(),
+                    filename.c_str(), tmp.c_str(), file_type.c_str());
+    if (std::filesystem::exists(file_name)) {
+      std::filesystem::copy_file(
+          file_name, copy_file_name,
+          std::filesystem::copy_options::overwrite_existing);
+    }
+  };
+
+  // std::string rpt_file_name =
+  //     Str::printf("%s/%s.topk.rpt", design_work_space, filename.c_str());
+  std::string rpt_file_name = save_path;
+  if (is_copy) {
+    copy_file(rpt_file_name, ".rpt");
+  }
+  reportTopkPath(rpt_file_name.c_str(), K, is_derate);
   LOG_INFO << "The timing engine run success.";
 
   return 1;
